@@ -48,7 +48,7 @@ class PackingGame(gym.Env):
         self.shapeDict     = args.get('shapeDict') 
         self.infoDict      = args.get('infoDict', {0: [{'volume': 0.001}], 1: [{'volume': 0.001}]})
         #self.dicPath       = load(args['dicPath'])
-        self.dicPath       = {0: "item0_path", 1: "item1_path"}
+        self.dicPath       = load(args['dicPath'])
         self.ZRotNum       = args.get('ZRotNum', 6)
         self.heightMapPre  = args.get('heightMap', True)
         self.globalView    = not args.get('only_simulate_current', False)
@@ -365,9 +365,7 @@ class PackingGame(gym.Env):
 
             sim_suc = False
             success = self.prejudge(rotIdx, targetFLB, self.space.naiveMask)
-             # Check if dicPath has the key
-            item_path = self.dicPath.get(self.next_item_ID, "default_path")[0:-4]
-            self.id = self.interface.addObject(item_path, targetFLB = targetFLB, rotation = rotation,
+            self.id = self.interface.addObject(self.dicPath[self.next_item_ID][0:-4], targetFLB = targetFLB, rotation = rotation,
                                           linearDamping = 0.5, angularDamping = 0.5)
             
             # Ensure index is valid for posZmap
@@ -410,8 +408,7 @@ class PackingGame(gym.Env):
            bounds = self.interface.get_wraped_AABB(self.id, inner=False)
            positionT, orientationT = self.interface.get_Wraped_Position_And_Orientation(self.id, inner=False)
            # Check if item path exists
-           item_path_full = self.dicPath.get(self.next_item_ID, "unknown_item")
-           self.packed.append([self.next_item_ID, item_path_full, positionT, orientationT])
+           self.packed.append([self.next_item_ID, self.dicPath[self.next_item_ID], positionT, orientationT])
            self.packedId.append(self.id)
 
         if not success:

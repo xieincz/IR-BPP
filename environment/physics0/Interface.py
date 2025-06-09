@@ -456,6 +456,34 @@ class Interface:
         positionFLB, orientationT, positionBase = self.get_trimesh_Position_And_Orientation(id, inner=True, getPosBase=True)
         positionHeight = targetHeight - positionFLB[2] + positionBase[2]
         p.resetBasePositionAndOrientation(id, [*positionBase[0:2], positionHeight], orientationT)
+    
+    def rayTest(self, rayFrom, rayTo):
+        """
+        Performs a single ray test in the pybullet simulation.
+        Args:
+            rayFrom (list): [x, y, z] start position of the ray.
+            rayTo (list): [x, y, z] end position of the ray.
+        Returns:
+            tuple or None: Returns the pybullet hit tuple
+                           (objectUniqueId, linkIndex, hitFraction, hitPosition, hitNormal)
+                           for the closest hit object, or None if no object is hit.
+                           The caller PackingGame.compute_compactness checks `if ray_result is not None`
+                           and then accesses `ray_result[0]` as the hit_id.
+        """
+        # p.rayTest returns a list containing one tuple for the closest hit:
+        # [(objectUniqueId, linkIndex, hitFraction, hitPosition, hitNormal)]
+        # objectUniqueId is -1 if no object is hit within the rayFrom -> rayTo range.
+        hit_results = p.rayTest(rayFrom, rayTo)
+        
+        # Check if the list is not empty and if an actual object was hit (ID != -1)
+        if hit_results and hit_results[0][0] != -1:
+             # An object (could be another item or the bin wall) was hit
+             # Return the first (closest) hit tuple: (id, link, fraction, pos, normal)
+             return hit_results[0]
+        else:
+             # No object was hit, or pybullet returned [(-1,...)].
+             # Return None so the calling code's `if ray_result is not None:` check works as intended.
+             return None
 
     def reset_trimesh_Position_And_Orientation_new(self, id, targetFLB, targetOrientation = None):
         mesh = self.meshDict[id].copy()
