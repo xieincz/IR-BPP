@@ -42,8 +42,9 @@ class Agent():
     for param in self.target_net.parameters():
       param.requires_grad = False
     self.optimiser = optim.Adam(self.online_net.parameters(), lr=args.learning_rate, eps=args.adam_eps)
+    self.temperature = args.temperature
 
-  # Resets noisy weights in all linear layers (of online net only)
+    # Resets noisy weights in all linear layers (of online net only)
   def reset_noise(self):
     self.online_net.reset_noise()
 
@@ -55,7 +56,11 @@ class Agent():
       sum_q_map = sum_q_map.sum(2)
       if mask is not None:
         sum_q_map[(1 - mask).bool()] = -math.inf
-    return sum_q_map.argmax(1)
+
+      # Softmax over Q-values with temperature
+      probs = torch.softmax(sum_q_map / self.temperature, dim=1)
+      action = torch.multinomial(probs, 1).squeeze(1)
+      return action
 
   # Acts with an ε-greedy policy (used for evaluation only)
   def act_e_greedy(self, state, mask, epsilon=0.001):  # High ε can reduce evaluation scores drastically

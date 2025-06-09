@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import torch
 import time
+import math
 
 # approxPolyDP
 def find_out_contour(contour, hierarchy):
@@ -101,3 +102,32 @@ def convexHulls(posZMap, mask,   heightResolution = 0.01):
         allCandidates = np.unique(allCandidates,axis=0)
         V = mask[(allCandidates[:, 1], allCandidates[:, 0])]
     return allCandidates, V
+
+def compute_local_compactness(mesh_list, current_item, center, radius, num_rays=24):
+    """
+    mesh_list: 当前环境中所有已放置物体的mesh列表
+    current_item: 当前已放置物体的mesh
+    center: 当前物体底面投影中心 (x, y)
+    radius: 探测半径 R
+    num_rays: 射线数量 n
+    return: 紧凑度 reward = 遮挡方向数 k / n
+    """
+    occluded = 0
+    angle_step = 2 * math.pi / num_rays
+
+    for i in range(num_rays):
+        angle = i * angle_step
+        dx = radius * math.cos(angle)
+        dy = radius * math.sin(angle)
+        start = np.array([center[0], center[1], 0.01])
+        end = np.array([center[0] + dx, center[1] + dy, 0.01])
+        ray_direction = end - start
+        ray_direction /= np.linalg.norm(ray_direction)
+
+        for mesh in mesh_list:
+            locations, _, _ = mesh.ray.intersects_location([start], [ray_direction])
+            if len(locations) > 0:
+                occluded += 1
+                break
+
+    return occluded / num_rays  # 返回 k/n

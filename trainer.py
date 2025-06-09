@@ -159,7 +159,8 @@ class trainer(object):
                 self.dqn.reset_noise()  # Draw a new set of noisy weights
 
             mask = get_mask_from_state(state, args, args.bufferSize)
-            action = self.dqn.act(state, mask)  # Choose an action greedily (with noisy weights)
+            #action = self.dqn.act(state, mask, tau=args.temperature)  # Choose an action using Boltzmann exploration
+            action = self.dqn.act(state, mask)
 
 
             next_state, reward, done, infos = envs.step(action.cpu().numpy())  # Step

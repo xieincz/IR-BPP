@@ -44,7 +44,7 @@ def get_args():
     parser.add_argument('--load-model', action='store_true', help='Load the trained model')
     parser.add_argument('--learn-start', type=int, default=int(5e2), metavar='STEPS',
                         help='Number of steps before starting training')
-
+    parser.add_argument('--temperature', type=float, default=1.0, help='Temperature for Boltzmann exploration')
     parser.add_argument('--evaluation-interval', type=int, default=100000, metavar='STEPS',
                         help='Number of training steps between evaluations')
     parser.add_argument('--evaluation-episodes-training', type=int, default=100, metavar='N',
@@ -93,7 +93,7 @@ def get_args():
 
     parser.add_argument('--evaluate', action='store_true', help='Evaluate only')
     parser.add_argument('--evaluation-episodes-test', type=int, default=2000, help='Number of evaluation episodes to average over')
-
+    parser.add_argument('--lambda-compactness', type=float, default=0.3, help='Weight for compactness reward')
 
     args = parser.parse_args()
     print('first hierachical',args.hierachical)

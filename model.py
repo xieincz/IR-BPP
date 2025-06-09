@@ -168,6 +168,9 @@ class GraphAttentionEncoder(nn.Module):
 
         data = {'data':h, 'mask': mask, 'graph_size': self.graph_size, 'evaluate': evaluate}
         h = self.layers(data)['data']
+        # # 通过多层 GAT 进行特征提取
+        # for layer in self.layers:
+        #     data = layer(data)
         return (h, h.view(h.size()[0], self.graph_size, -1).mean(dim=1),)
 
 
@@ -285,14 +288,14 @@ class DQNBPP(nn.Module):
         self.embedder = GraphAttentionEncoder(
             n_heads=1,
             embed_dim=self.embedding_dim,
-            n_layers=1,
+            n_layers=3,
             graph_size=args.bufferSize,
         )
         self.gat_project_layer = nn.Sequential(
             init_(nn.Linear(384, 256)),
             nn.LeakyReLU(),
             init_(nn.Linear(256, self.embedding_dim)))
-        
+
     self.fc_h_v = NoisyLinear(self.embedding_dim, args.hidden_size, std_init=args.noisy_std)
     self.fc_h_a = NoisyLinear(self.embedding_dim, args.hidden_size, std_init=args.noisy_std)
     self.fc_z_v = NoisyLinear(args.hidden_size, self.atoms, std_init=args.noisy_std)
@@ -394,13 +397,20 @@ class DQNBPP(nn.Module):
       a = self.fc_z_a(F.relu(self.fc_h_a(x)))  # Advantage stream
       v, a = v.view(-1, 1, self.atoms), a.view(-1, self.action_space, self.atoms)
       q = v + a - a.mean(1, keepdim=True)  # Combine streams
+    #   # Softmax 探索策略
+    #   action_probs = F.softmax(q / tau, dim=2)  # Boltzmann探索：根据温度调整
+    #   # 从动作的概率分布中采样动作
+    #   action = torch.multinomial(action_probs.view(-1, self.action_space), 1).squeeze(1)
       if log:  # Use log softmax for numerical stability
-        q = F.log_softmax(q, dim=2)  # Log probabilities with action over second dimension
+        # q = F.log_softmax(q, dim=2)  # Log probabilities with action over second dimension
+        q = F.log_softmax(q/ self.args.temperature, dim=2)  # Log probabilities with action over second dimension
       else:
-        q = F.softmax(q, dim=2)  # Probabilities with action over second dimension
+        # q = F.softmax(q, dim=2)  # Probabilities with action over second dimension
+        q = F.softmax(q/ self.args.temperature, dim=2)  # Probabilities with action over second dimension
       self.forwardCounter += 1
       if self.forwardCounter == 1000:
           self.updateShapeArray()
+    #   return action
       return q
 
   def reset_noise(self):
