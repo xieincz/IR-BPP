@@ -23,11 +23,14 @@ def main(args):
 
     # Set the device
     if torch.cuda.is_available() and not args.disable_cuda:
-      args.device = torch.device('cuda:{}'.format(args.device))
-      torch.cuda.manual_seed(args.seed)
-      torch.backends.cudnn.enabled = args.enable_cudnn
+        args.device = torch.device('cuda:{}'.format(args.device))
+        print('Using GPU: {}'.format(args.device))
+        torch.cuda.manual_seed(args.seed)
+        torch.backends.cudnn.enabled = args.enable_cudnn
     else:
         args.device = torch.device('cpu')
+        print('Using CPU')
+    print('Device: {}'.format(args.device))
 
     if args.device.type.lower() != 'cpu':
         torch.cuda.set_device(args.device)
